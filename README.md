@@ -7,7 +7,7 @@ HSH (Hobby SHell) is a basic command-line shell implemented in **Rust**. This pr
 
 HSH provides the following built-in commands:
 
-* **`cat <file>`**: Reads and displays the content of a specified file to the console.
+* **`read <file>`**: Reads and displays the content of a specified file to the console.
 * **`ls`**: Lists the contents of the current working directory. By default, it hides files and directories that start with a dot (`.`) on Unix-like systems, offering a cleaner view.
 * **`clear`**: Clears the terminal screen, providing a fresh workspace.
 * **`cd <directory>`**: Changes the current working directory. Supports relative and absolute paths.
@@ -61,7 +61,7 @@ src   target   README.md   Cargo.toml
 hsh > touch new_document.txt
 hsh > ls
 src   target   README.md   Cargo.toml   new_document.txt
-hsh > cat README.md
+hsh > read README.md
 # HSH: A Simple Shell in Rust
 ---
 # ... (contents of README.md) ...
