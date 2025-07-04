@@ -1,7 +1,5 @@
-````markdown
 # HSH: A Simple Shell in Rust
 
----
 
 HSH (Hobby SHell) is a basic command-line shell implemented in **Rust**. This project goes beyond just a simple command executor; it serves as a practical, hands-on example for understanding the core mechanics of a shell. It demonstrates fundamental concepts of system programming, including command parsing, interacting with the file system, and basic process control in a safe and efficient language like Rust. HSH is designed to be extensible, providing a solid foundation for exploring more advanced shell features.
 
