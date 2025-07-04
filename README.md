@@ -31,7 +31,7 @@ curl --proto '=https' --tlsv1.2 -sSf [https://sh.rustup.rs](https://sh.rustup.rs
 1.  **Clone the repository:**
 
     ```bash
-    git clone [https://github.com/itshsvm/hsh.git](https://github.com/ithsvm/hsh.git)
+    git clone https://github.com/itshsvm/hsh.git
     cd hsh
     ```
 
