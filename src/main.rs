@@ -6,9 +6,10 @@ use std::{
     path::Path,
 };
 
-fn main() {
-    let mut vars: HashMap<String, String> = HashMap::new();
+use hsh::errors::HshErr;
 
+fn main() -> std::result::Result<(), HshErr> {
+    let mut vars: HashMap<String, String> = HashMap::new();
     loop {
         print!("hsh > ");
 
@@ -43,9 +44,7 @@ fn main() {
                 }
             }
 
-            "ls" => {
-                let _ = ls_dir();
-            }
+            "ls" => ls_dir()?,
 
             "set" => {
                 if args.is_empty() {
@@ -129,6 +128,7 @@ fn main() {
             }
         }
     }
+    Ok(())
 }
 
 fn ls_dir() -> io::Result<()> {
