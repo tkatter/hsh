@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     env,
     fs::{self, File},
     io::{self, ErrorKind, Read, Write},
@@ -6,6 +7,8 @@ use std::{
 };
 
 fn main() {
+    let mut vars: HashMap<String, String> = HashMap::new();
+
     loop {
         print!("hsh > ");
 
@@ -16,18 +19,17 @@ fn main() {
             .expect("Can not read line ...");
         let input = input.trim();
 
-
         if input.is_empty() {
             continue;
         }
 
         let mut parts = input.split_whitespace();
         let command = parts.next().unwrap();
-        let args: Vec<&str> = parts.collect();
+        let args: Vec<String> = parts.map(|s| resolve_variable(s, &vars)).collect();
 
         match command {
             "cd" => {
-                let new_dir = args.first().unwrap_or(&"/");
+                let new_dir = args.first().map(|s| s.as_str()).unwrap_or("/");
                 let root = Path::new(new_dir);
 
                 if args.len() != 1 {
@@ -43,6 +45,59 @@ fn main() {
 
             "ls" => {
                 let _ = ls_dir();
+            }
+
+            "set" => {
+                if args.is_empty() {
+                    if vars.is_empty() {
+                        println!("Not variables set.");
+                    } else {
+                        for (key, value) in &vars {
+                            println!("{}={}", key, value);
+                        }
+                    }
+                } else {
+                    for arg in args {
+                        if let Some(eq_index) = arg.find('=') {
+                            let key = &arg[..eq_index];
+                            let value = &arg[eq_index + 1..];
+                            vars.insert(key.to_string(), value.to_string());
+                        } else {
+                            println!("Invalid format: expected key=value")
+                        }
+                    }
+                }
+            }
+
+            "pwd" => match env::current_dir() {
+                Ok(path) => println!("{}", path.display()),
+                Err(e) => println!("Error getting current directory: {}", e),
+            },
+
+            "export" => {
+                for arg in args {
+                    if let Some(eq_index) = arg.find('=') {
+                        let key = &arg[..eq_index];
+                        let value = &arg[eq_index + 1..];
+                        vars.insert(key.to_string(), value.to_string());
+                        unsafe { std::env::set_var(key, value) };
+                    } else {
+                        println!("Invalid format in export: expected key=value got '{}'", arg);
+                    }
+                }
+            }
+
+            "unset" => {
+                for key in &args {
+                    vars.remove(key);
+                    unsafe { std::env::remove_var(key) };
+                }
+            }
+
+            "env" => {
+                for (key, value) in std::env::vars() {
+                    println!("{}={}", key, value);
+                }
             }
 
             "clear" => {
@@ -65,8 +120,12 @@ fn main() {
                 let _ = touch_command(args.first().unwrap());
             }
 
+            "echo" => {
+                println!("{}", args.join(" "));
+            }
+
             _ => {
-                println!("Not Found!")
+                println!("Not Found!");
             }
         }
     }
@@ -121,10 +180,9 @@ fn read_command(file_name: &str) -> io::Result<()> {
                 println!("An error occurred while opening the file: {:?}", e);
                 return Err(e); // Propagate other errors too
             }
-        },
+        }
     };
 
-    
     let mut buf = String::new();
 
     f.read_to_string(&mut buf)?;
@@ -132,7 +190,6 @@ fn read_command(file_name: &str) -> io::Result<()> {
     println!("{}", buf);
     Ok(())
 }
-
 
 fn touch_command(file_name: &str) -> io::Result<()> {
     let path = Path::new(file_name);
@@ -143,4 +200,35 @@ fn touch_command(file_name: &str) -> io::Result<()> {
         .open(&path)?;
 
     Ok(())
+}
+
+fn resolve_variable(input: &str, vars: &HashMap<String, String>) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if c == '$' {
+            let mut var_name = String::new();
+
+            while let Some(&next_c) = chars.peek() {
+                if next_c.is_alphanumeric() || next_c == '_' {
+                    var_name.push(next_c);
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+
+            if !var_name.is_empty() {
+                if let Some(value) = vars.get(&var_name) {
+                    result.push_str(value);
+                }
+            } else {
+                result.push('$');
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
 }

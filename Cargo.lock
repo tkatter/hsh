@@ -60,6 +60,7 @@ name = "hsh"
 version = "0.1.0"
 dependencies = [
  "clearscreen",
+ "libc",
 ]
 
 [[package]]

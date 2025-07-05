@@ -64,11 +64,34 @@ src   target   README.md   Cargo.toml   new_document.txt
 hsh > read README.md
 # HSH: A Simple Shell in Rust
 ---
+hsh > set lang=Rust
+hsh > echo Welcome to $lang programming.
+# Welcome to Rust programming.
+hsh > set lang=Rust name=Hesam
+hsh > set
+# name=Hesam
+# lang=Rust
+
+hsh > set path=/home/hesam
+hsh > read $path/notes.txt
+hsh > export editor=nvim
+
+hsh > env
+# editor=nvim
+
+hsh > unset name
+hsh > set
+# lang=Rust
+# version=1.78
+# editor=nvim
+---
 # ... (contents of README.md) ...
 
 hsh > cd src
 hsh > ls
 main.rs
+hsh > pwd
+/current/directory
 hsh > clear
 # (the terminal screen will clear)
 hsh > exit
@@ -87,13 +110,13 @@ HSH is an ongoing project, and there are many features planned for future develo
   * **Input/Output Redirection (`>`, `>>`, `<`)**: Allow directing command output to files or reading input from files.
   * **Background Processes (`&`)**: Run commands in the background without blocking the shell.
   * **More Built-in Commands**:
-      * `pwd`: Print current working directory.
+      * `pwd`: Print current working directory. [Done]
       * `mkdir`: Create new directories.
       * `rm`: Remove files or directories.
       * `cp`: Copy files or directories.
       * `mv`: Move/rename files or directories.
-      * `echo`: Print arguments to stdout.
-  * **Environment Variables**: Support setting, getting, and listing environment variables.
+      * `echo`: Print arguments to stdout. [Done]
+  * **Environment Variables**: Support setting, getting, and listing environment variables. [Done]
   * **Error Handling Improvements**: More robust and user-friendly error messages for various scenarios.
   * **Prompt Customization**: Allow users to customize the shell prompt.
 
