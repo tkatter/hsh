@@ -1,4 +1,5 @@
 use std::{
+    result,
     collections::HashMap,
     env,
     fs::{self, File},
@@ -8,7 +9,7 @@ use std::{
 
 use hsh::errors::HshErr;
 
-fn main() -> std::result::Result<(), HshErr> {
+fn main() -> result::Result<(), HshErr> {
     let mut vars: HashMap<String, String> = HashMap::new();
     loop {
         print!("hsh > ");
