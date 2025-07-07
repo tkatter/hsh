@@ -2,9 +2,9 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct ArgErr {
-    exit_code: u8,
-    err_type: ArgErrType,
-    message: String,
+    pub exit_code: u8,
+    pub err_type: ArgErrType,
+    pub message: String,
 }
 
 #[derive(Debug)]

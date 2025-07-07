@@ -1,5 +1,4 @@
 use std::{
-    result,
     collections::HashMap,
     env,
     fs::{self, File},
@@ -7,9 +6,9 @@ use std::{
     path::Path,
 };
 
-use hsh::errors::HshErr;
+use hsh::hsh_cmds::{Flag, Flags, HshCmds};
 
-fn main() -> result::Result<(), HshErr> {
+fn main() {
     let mut vars: HashMap<String, String> = HashMap::new();
     loop {
         print!("hsh > ");
@@ -27,113 +26,148 @@ fn main() -> result::Result<(), HshErr> {
 
         let mut parts = input.split_whitespace();
         let command = parts.next().unwrap();
-        let args: Vec<String> = parts.map(|s| resolve_variable(s, &vars)).collect();
+        let mut cmd_flags: Flags = Flags::default();
+        let args: Vec<String> = parts.filter_map(|s| resolve_variable(s, &vars, &mut cmd_flags)).collect();
 
-        match command {
-            "cd" => {
-                let new_dir = args.first().map(|s| s.as_str()).unwrap_or("/");
-                let root = Path::new(new_dir);
+        println!("FLAGS: {}", cmd_flags);
+        println!("ARGS: {:?}", args);
 
-                if args.len() != 1 {
-                    println!("Usage cd <directory>");
-                } else if args.len() > 1 {
-                    println!("It does not take more than one argument.")
-                } else {
-                    if let Err(e) = env::set_current_dir(root) {
-                        eprintln!("cd: {}", e);
-                    }
-                }
-            }
-
-            "ls" => ls_dir()?,
-
-            "set" => {
-                if args.is_empty() {
-                    if vars.is_empty() {
-                        println!("Not variables set.");
-                    } else {
-                        for (key, value) in &vars {
-                            println!("{}={}", key, value);
-                        }
-                    }
-                } else {
-                    for arg in args {
-                        if let Some(eq_index) = arg.find('=') {
-                            let key = &arg[..eq_index];
-                            let value = &arg[eq_index + 1..];
-                            vars.insert(key.to_string(), value.to_string());
-                        } else {
-                            println!("Invalid format: expected key=value")
-                        }
-                    }
-                }
-            }
-
-            "pwd" => match env::current_dir() {
-                Ok(path) => println!("{}", path.display()),
-                Err(e) => println!("Error getting current directory: {}", e),
-            },
-
-            "export" => {
-                for arg in args {
-                    if let Some(eq_index) = arg.find('=') {
-                        let key = &arg[..eq_index];
-                        let value = &arg[eq_index + 1..];
-                        vars.insert(key.to_string(), value.to_string());
-                        unsafe { std::env::set_var(key, value) };
-                    } else {
-                        println!("Invalid format in export: expected key=value got '{}'", arg);
-                    }
-                }
-            }
-
-            "unset" => {
-                for key in &args {
-                    vars.remove(key);
-                    unsafe { std::env::remove_var(key) };
-                }
-            }
-
-            "env" => {
-                for (key, value) in std::env::vars() {
-                    println!("{}={}", key, value);
-                }
-            }
-
-            "clear" => {
-                let _ = clear_screen();
-            }
-
-            "read" => {
-                if args.len() != 1 {
-                    println!("Usage read <filename>");
-                } else {
-                    let _ = read_command(args.first().unwrap());
-                }
-            }
-
-            "exit" => {
-                break;
-            }
-
-            "touch" => {
-                let _ = touch_command(args.first().unwrap());
-            }
-
-            "echo" => {
-                println!("{}", args.join(" "));
-            }
-
-            _ => {
-                println!("Not Found!");
-            }
+        // Handle unknown commands
+        if let Err(e) = command.parse::<HshCmds>() {
+            eprintln!("{}", e);
+            continue;
         }
+        let command = command.parse::<HshCmds>().unwrap();
+
+        match HshCmds::from_input(command, cmd_flags) {
+            Ok((HshCmds::Ls, cmd)) => {
+                println!("{}", HshCmds::Ls);
+                println!("Executing: {}", cmd.cmd)
+            }
+            Ok((HshCmds::Cd, cmd)) => {
+                println!("Executing: {}", cmd.cmd)
+            }
+            Ok((HshCmds::Clear, cmd)) => {
+                println!("Executing: {}", cmd.cmd)
+            }
+            Err(e) => eprintln!("{}", e)
+        }
+
+        // match command {
+        //     "cd" => {
+        //         let new_dir = args.first().map(|s| s.as_str()).unwrap_or("/");
+        //         let root = Path::new(new_dir);
+        //
+        //         if args.len() != 1 {
+        //             println!("Usage cd <directory>");
+        //         } else if args.len() > 1 {
+        //             println!("`cd` only accepts one argument")
+        //         } else if let Err(e) = env::set_current_dir(root) {
+        //             eprintln!("cd: {}", e);
+        //         }
+        //     }
+        //
+        //     "ls" => {
+        //         let mut arg: Option<&str> = None;
+        //         let mut dir: &str;
+        //         if args.contains(&"-l".to_string()) {
+        //             arg = Some("-l");
+        //             println!("ls contains -l");
+        //         }
+        //         dir = ".";
+        //         let _ = ls_dir(arg, dir);}
+        //
+        //     "set" => {
+        //         if args.is_empty() {
+        //             if vars.is_empty() {
+        //                 println!("Not variables set.");
+        //             } else {
+        //                 for (key, value) in &vars {
+        //                     println!("{}={}", key, value);
+        //                 }
+        //             }
+        //         } else {
+        //             for arg in args {
+        //                 if let Some(eq_index) = arg.find('=') {
+        //                     let key = &arg[..eq_index];
+        //                     let value = &arg[eq_index + 1..];
+        //                     vars.insert(key.to_string(), value.to_string());
+        //                 } else {
+        //                     println!("Invalid format: expected key=value")
+        //                 }
+        //             }
+        //         }
+        //     }
+        //
+        //     "pwd" => match env::current_dir() {
+        //         Ok(path) => println!("{}", path.display()),
+        //         Err(e) => println!("Error getting current directory: {}", e),
+        //     },
+        //
+        //     "export" => {
+        //         for arg in args {
+        //             if let Some(eq_index) = arg.find('=') {
+        //                 let key = &arg[..eq_index];
+        //                 let value = &arg[eq_index + 1..];
+        //                 vars.insert(key.to_string(), value.to_string());
+        //                 unsafe { std::env::set_var(key, value) };
+        //             } else {
+        //                 println!("Invalid format in export: expected key=value got '{}'", arg);
+        //             }
+        //         }
+        //     }
+        //
+        //     "unset" => {
+        //         for key in &args {
+        //             vars.remove(key);
+        //             unsafe { std::env::remove_var(key) };
+        //         }
+        //     }
+        //
+        //     "env" => {
+        //         for (key, value) in std::env::vars() {
+        //             println!("{}={}", key, value);
+        //         }
+        //     }
+        //
+        //     "clear" => {
+        //         let _ = clear_screen();
+        //     }
+        //
+        //     "read" => {
+        //         if args.len() != 1 {
+        //             println!("Usage read <filename>");
+        //         } else {
+        //             let _ = read_command(args.first().unwrap());
+        //         }
+        //     }
+        //
+        //     "exit" => {
+        //         break;
+        //     }
+        //
+        //     "touch" => {
+        //         let _ = touch_command(args.first().unwrap());
+        //     }
+        //
+        //     "echo" => {
+        //         println!("{}", args.join(" "));
+        //     }
+        //
+        //     _ => {
+        //         println!("Not Found!");
+        //     }
+        // }
     }
-    Ok(())
 }
 
-fn ls_dir() -> io::Result<()> {
-    let mut list_dir = fs::read_dir(".")?
+fn ls_dir(arg: Option<&str>, dir: &str) -> io::Result<()> {
+    if let Some(arg) = arg {
+        match arg {
+        "-l" => println!("yaya contains '-l'"),
+        _ => println!("invalid option")
+    }}
+    let mut list_dir = fs::read_dir(dir)?
         .map(|e| e.map(|res| res.file_name()))
         .collect::<Result<Vec<_>, io::Error>>()?;
 
@@ -203,14 +237,13 @@ fn touch_command(file_name: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn resolve_variable(input: &str, vars: &HashMap<String, String>) -> String {
+fn resolve_variable(input: &str, vars: &HashMap<String, String>, flags: &mut Flags) -> Option<String> {
     let mut result = String::new();
     let mut chars = input.chars().peekable();
 
     while let Some(c) = chars.next() {
         if c == '$' {
             let mut var_name = String::new();
-
             while let Some(&next_c) = chars.peek() {
                 if next_c.is_alphanumeric() || next_c == '_' {
                     var_name.push(next_c);
@@ -227,9 +260,21 @@ fn resolve_variable(input: &str, vars: &HashMap<String, String>) -> String {
             } else {
                 result.push('$');
             }
+        } else if c == '-' {
+            while let Some(&next_c) = chars.peek() {
+                flags.push(Flag::new(next_c));
+                // eprintln!("c: {}, next_c: {}", c, next_c);
+                chars.next();
+            }
         } else {
             result.push(c);
         }
     }
-    result
+
+    // Avoids building vec of empty strings
+    if result.is_empty() {
+        None 
+    } else {
+        Some(result)
+    }
 }
