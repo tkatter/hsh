@@ -1,4 +1,3 @@
-pub mod errors;
 pub mod hsh_cmds;
 
 #[cfg(test)]
